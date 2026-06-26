@@ -76,14 +76,14 @@ runtime, without pausing the rest of its queue or shipping a deploy.
   added to the Dead set). Only for classes you can afford to lose.
 
 ```ruby
-Sidekiq::Routing.park("HardJob")
+Sidekiq::Routing.park("RunawayImportJob")
 Sidekiq::Routing.blackhole("FireAndForgetJob")
-Sidekiq::Routing.unpark("HardJob")
+Sidekiq::Routing.unpark("RunawayImportJob")
 
-Sidekiq::Routing.routed?("HardJob")  # => true/false
-Sidekiq::Routing.parked?("HardJob")  # => true only when in park mode
-Sidekiq::Routing.mode("HardJob")     # => "park" | "blackhole" | nil
-Sidekiq::Routing.routes              # => { "HardJob" => { "mode" => "park", ... } }
+Sidekiq::Routing.routed?("RunawayImportJob")  # => true/false
+Sidekiq::Routing.parked?("RunawayImportJob")  # => true only when in park mode
+Sidekiq::Routing.mode("RunawayImportJob")     # => "park" | "blackhole" | nil
+Sidekiq::Routing.routes              # => { "RunawayImportJob" => { "mode" => "park", ... } }
 ```
 
 A route accepts a Class or a String. ActiveJob jobs are matched by their real
@@ -95,8 +95,8 @@ A route accepts a Class or a String. ActiveJob jobs are matched by their real
 are *already enqueued* on a live queue into the parking queue, sweep them:
 
 ```ruby
-Sidekiq::Routing.sweep("HardJob", queue: "within_1_minute")
-Sidekiq::Routing.sweep("HardJob", queue: "within_1_minute", limit: 10_000)
+Sidekiq::Routing.sweep("RunawayImportJob", queue: "within_1_minute")
+Sidekiq::Routing.sweep("RunawayImportJob", queue: "within_1_minute", limit: 10_000)
 ```
 
 A queue must be resolvable — pass `queue:` explicitly (the sweep deliberately
@@ -108,11 +108,11 @@ never scans every queue, which would hammer Redis during an incident).
 # Move parked jobs back to their original queue (stamps them so an active
 # route won't immediately bounce them back).
 Sidekiq::Routing.process_parked
-Sidekiq::Routing.process_parked(klass: "HardJob", limit: 1_000)
+Sidekiq::Routing.process_parked(klass: "RunawayImportJob", limit: 1_000)
 
 # Introspection
 Sidekiq::Routing.parked_size       # O(1) count of the parking queue
-Sidekiq::Routing.parked_breakdown  # { "HardJob" => { "count" => 12, "by_original_queue" => {...} } }
+Sidekiq::Routing.parked_breakdown  # { "RunawayImportJob" => { "count" => 12, "by_original_queue" => {...} } }
 ```
 
 A processed parked job has its payload rewritten to target its original queue,
@@ -216,17 +216,6 @@ operator API (`park`/`blackhole`/`unpark`) writes through and resets the
 snapshot, so console changes take effect immediately for the writer and within
 one TTL everywhere else. Parking rewrites the `queue` field *inside the job
 payload*, which is what makes recovery and retry-to-original-queue correct.
-
-## Development
-
-```sh
-bin/setup            # or: bundle install
-bundle exec rake test
-```
-
-The test suite talks to a real Redis. It uses logical DB 15 of
-`redis://localhost:6379` by default; override with `REDIS_URL` (point it at a
-disposable Redis). No Rails or database is involved.
 
 ## License
 
