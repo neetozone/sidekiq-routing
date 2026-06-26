@@ -171,13 +171,13 @@ exposes park/blackhole/unpark/sweep, so destructive operations stay deliberate.
 
 Require it only where you mount Sidekiq Web:
 
-<img width="2964" height="1550" alt="CleanShot 2026-06-26 at 13 59 49@2x" src="https://github.com/user-attachments/assets/8da1149d-c76d-47d6-8be6-7aef921d54ea" />
-
 ```ruby
 require "sidekiq/web"
 require "sidekiq/routing/web" # registers the "Routing" tab
 mount Sidekiq::Web => "/sidekiq"
 ```
+
+<img width="2964" height="1550" alt="CleanShot 2026-06-26 at 13 59 49@2x" src="https://github.com/user-attachments/assets/8da1149d-c76d-47d6-8be6-7aef921d54ea" />
 
 ## Configuration reference
 
