@@ -1,0 +1,11 @@
+---
+plan_slug: standard-2
+triggers:
+- event: branch
+  branch_name: main
+- event: pull_request
+commands:
+- checkout
+- neetoci-version ruby 4.0.1
+- bundle install --deployment --path vendor/bundle
+- bundle exec rspec
