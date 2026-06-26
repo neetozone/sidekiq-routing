@@ -33,7 +33,7 @@ bundle install
 ```
 
 Requires Ruby >= 3.1 and Sidekiq >= 7.0 (tested on Sidekiq 7.3.x and 8.x). The
-gem depends only on `sidekiq` — no Rails or ActiveSupport required.
+gem depends only on `sidekiq`.
 
 ## Quick start
 
@@ -52,9 +52,7 @@ Sidekiq::Routing.install! # registers the client + server middleware
 ```
 
 `install!` prepends the client middleware (so enqueues are diverted) and adds
-the server middleware (so in-flight jobs are diverted). If
-[sidekiq-unique-jobs](https://github.com/mhenrixon/sidekiq-unique-jobs) is
-present, the routing server middleware is inserted *after* it automatically.
+the server middleware (so in-flight jobs are diverted).
 
 Then, from a console during an incident:
 
@@ -171,8 +169,9 @@ A read-only "Routing" tab for Sidekiq Web shows active routes and parking-queue
 depth/breakdown. Every mutating action stays on the console API — the tab never
 exposes park/blackhole/unpark/sweep, so destructive operations stay deliberate.
 
-Require it only where you mount Sidekiq Web (so worker processes never load the
-web framework):
+Require it only where you mount Sidekiq Web:
+
+<img width="2964" height="1550" alt="CleanShot 2026-06-26 at 13 59 49@2x" src="https://github.com/user-attachments/assets/8da1149d-c76d-47d6-8be6-7aef921d54ea" />
 
 ```ruby
 require "sidekiq/web"
