@@ -87,6 +87,20 @@ Sidekiq::Routing.routes              # => { "RunawayImportJob" => { "mode" => "p
 A route accepts a Class or a String. ActiveJob jobs are matched by their real
 ("wrapped") class, not the adapter's job wrapper.
 
+### Identifying the class flooding a live queue
+
+During a latency alert, inspect the breached queue with a capped, read-only scan:
+
+```ruby
+report = Sidekiq::Routing.queue_composition("within_1_minute")
+puts report
+# RunawayImportJob                                      count=12345     oldest=380s ago
+# OtherJob                                             count=12        oldest=45s ago
+# scanned 12357 of 12357 (cap 250000)
+
+report.offender["class"] # => "RunawayImportJob"
+```
+
 ### Clearing an existing backlog into the parking queue
 
 `park` only diverts jobs from the moment it's set. To move a class's jobs that
