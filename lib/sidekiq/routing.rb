@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "sidekiq"
+require "sidekiq/api"
 require "json"
 
 # Runtime, per-job-class parking/blackhole mechanism for Sidekiq incident response.
@@ -121,7 +122,11 @@ module Sidekiq
         end
       end
 
-      # ---- parking queue introspection ----
+      # ---- queue introspection ----
+
+      def queue_composition(queue_name, scan_limit: QueueComposition::DEFAULT_SCAN_LIMIT)
+        QueueComposition.new(queue_name, scan_limit:).call
+      end
 
       def parked_size
         Sidekiq::Queue.new(parked_queue).size
