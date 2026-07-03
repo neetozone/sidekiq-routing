@@ -5,8 +5,8 @@ require_relative "lib/sidekiq/routing/version"
 Gem::Specification.new do |spec|
   spec.name = "sidekiq-routing"
   spec.version = Sidekiq::Routing::VERSION
-  spec.authors = ["Vishnu M"]
-  spec.email = ["vishnu.m@bigbinary.com"]
+  spec.authors = ["Neeraj Singh"]
+  spec.email = ["neeraj@neeto.com"]
 
   spec.summary = "Runtime, per-job-class queue routing for Sidekiq: park, blackhole, " \
                  "and auto-reroute job classes without a deploy."
