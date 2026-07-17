@@ -26,6 +26,8 @@ module Sidekiq
     MODE_BLACKHOLE = "blackhole"
     MODES = [MODE_PARK, MODE_BLACKHOLE].freeze
 
+    EMPTY_ROUTES = {}.freeze
+
     @snapshot = nil
     @snapshot_at = nil
     @snapshot_mutex = Mutex.new
@@ -201,12 +203,24 @@ module Sidekiq
             current = @snapshot
             fresh = current && ttl.positive? && (now - @snapshot_at) < ttl
             unless fresh
-              @snapshot = Store.all.freeze
+              @snapshot = refresh_snapshot(current)
               @snapshot_at = now
               current = @snapshot
             end
           end
           current
+        end
+
+        # Fail open: the refresh runs inside every perform_async via the client
+        # middleware, so a Redis hiccup here must never fail the push. Keep
+        # serving the previous snapshot (or route nothing) until the next TTL
+        # window instead of raising.
+        def refresh_snapshot(current)
+          Store.all.freeze
+        rescue StandardError => error
+          fallback = current ? "keeping stale snapshot" : "routing nothing this TTL window"
+          logger.warn("[Routing] snapshot refresh failed, #{fallback} (#{error.class}: #{error.message})")
+          current || EMPTY_ROUTES
         end
     end
   end

@@ -37,6 +37,36 @@ module Sidekiq
         assert_equal "park", all["JobA"]["mode"]
         assert_equal "blackhole", all["JobB"]["mode"]
       end
+
+      # A desynced Redis connection can hand HGETALL the reply of another
+      # command — e.g. the RESP HELLO handshake map, whose values ("redis",
+      # "7.4.0", "3", ...) are not route entries. Foreign values must be
+      # skipped, never raised on (neeto-desk-web HB fault 132106676).
+      def test_all_skips_values_that_are_not_json
+        Store.set("JobA", mode: "park")
+        Sidekiq.redis { |conn| conn.hset(Store::HASH_KEY, "server", "redis") }
+
+        assert_equal({ "JobA" => Store.fetch("JobA") }, Store.all)
+      end
+
+      def test_all_skips_json_values_that_are_not_objects
+        Store.set("JobA", mode: "park")
+        Sidekiq.redis { |conn| conn.hset(Store::HASH_KEY, "proto", "3") }
+
+        assert_equal({ "JobA" => Store.fetch("JobA") }, Store.all)
+      end
+
+      def test_fetch_returns_nil_for_a_value_that_is_not_json
+        Sidekiq.redis { |conn| conn.hset(Store::HASH_KEY, "server", "redis") }
+
+        assert_nil Store.fetch("server")
+      end
+
+      def test_fetch_returns_nil_for_a_json_value_that_is_not_an_object
+        Sidekiq.redis { |conn| conn.hset(Store::HASH_KEY, "proto", "3") }
+
+        assert_nil Store.fetch("proto")
+      end
     end
   end
 end

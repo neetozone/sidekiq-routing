@@ -27,14 +27,38 @@ module Sidekiq
         # -> {"mode"=>...} or nil
         def fetch(name)
           raw = Sidekiq.redis { |conn| conn.hget(HASH_KEY, name) }
-          raw && JSON.parse(raw)
+          raw && parse_entry(name, raw)
         end
 
         # -> { "ClassName" => {"mode"=>...}, ... }
         def all
           Sidekiq.redis { |conn| conn.hgetall(HASH_KEY) }
-            .transform_values { |raw| JSON.parse(raw) }
+            .each_with_object({}) do |(name, raw), routes|
+              entry = parse_entry(name, raw)
+              routes[name] = entry if entry
+            end
         end
+
+        private
+
+          # A route entry must be a JSON object; anything else is skipped with a
+          # warning, never raised on. The reads feed the client-middleware hot
+          # path inside every perform_async, and the raw value can be foreign
+          # data — e.g. a desynced pooled connection handing HGETALL the reply
+          # of a RESP HELLO handshake ({"server"=>"redis", "proto"=>"3", ...}).
+          def parse_entry(name, raw)
+            entry = JSON.parse(raw)
+            entry.is_a?(Hash) ? entry : warn_invalid(name, raw)
+          rescue JSON::ParserError
+            warn_invalid(name, raw)
+          end
+
+          # -> nil
+          def warn_invalid(name, raw)
+            Routing.logger.warn(
+              "[Routing] ignoring invalid route entry #{name.inspect} => #{raw.inspect.byteslice(0, 200)}")
+            nil
+          end
       end
     end
   end

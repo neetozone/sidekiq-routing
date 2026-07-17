@@ -111,6 +111,34 @@ module Sidekiq
       ensure
         Routing.configuration.cache_ttl_seconds = 5
       end
+
+      # The snapshot refresh runs inside every perform_async (client
+      # middleware); a Redis hiccup there must never fail the push.
+      def test_route_for_returns_nil_when_the_first_refresh_fails
+        Store.stubs(:all).raises(RedisClient::ConnectionError, "boom")
+
+        assert_nil Routing.route_for(ParkableJob)
+      end
+
+      def test_route_for_keeps_serving_the_stale_snapshot_when_a_refresh_fails
+        Routing.configuration.cache_ttl_seconds = 0.01
+        Routing.park(ParkableJob)
+        assert_equal "park", Routing.route_for(ParkableJob)["mode"] # primes the snapshot
+
+        sleep 0.02 # let the TTL lapse so the next read refreshes
+        Store.stubs(:all).raises(RedisClient::ConnectionError, "boom")
+
+        assert_equal "park", Routing.route_for(ParkableJob)["mode"]
+      ensure
+        Routing.configuration.cache_ttl_seconds = 5
+      end
+
+      def test_failed_refresh_is_not_retried_until_the_next_ttl_window
+        Store.expects(:all).raises(RedisClient::ConnectionError, "boom").once
+
+        assert_nil Routing.route_for(ParkableJob)
+        assert_nil Routing.route_for(ParkableJob) # within TTL: served from the cached empty snapshot
+      end
     end
   end
 end
