@@ -4,11 +4,11 @@ Runtime, per-job-class **queue routing for Sidekiq** — park, blackhole, or
 auto-reroute a job class **without a deploy**.
 
 Background jobs often share a handful of latency-tiered queues
-(`within_5_seconds`, `within_1_minute`, …). The queue name is a contract: every
-job on a tier should start within that window. That sharing is efficient until
-one class misbehaves — a flood, a runaway argument, a broken downstream — and
-then the only built-in lever, pausing the whole queue, punishes every other
-class on the tier. `sidekiq-routing` gives you a finer lever, applied at
+(`within_5_seconds`, `within_1_minute`, …). The queue name is a contract:
+every job on a tier should start within that window. That sharing is efficient
+until one class misbehaves — a flood, a runaway argument, a broken downstream
+— and then the only built-in lever, pausing the whole queue, punishes every
+other class on the tier. `sidekiq-routing` gives you a finer lever, applied at
 runtime to a single job class:
 
 | Kind | Purpose | Driver | Target |
@@ -89,7 +89,8 @@ A route accepts a Class or a String. ActiveJob jobs are matched by their real
 
 ### Identifying the class flooding a live queue
 
-During a latency alert, inspect the breached queue with a capped, read-only scan:
+During a latency alert, inspect the breached queue with a capped, read-only
+scan:
 
 ```ruby
 report = Sidekiq::Routing.queue_composition("within_1_minute")
@@ -142,8 +143,8 @@ export SIDEKIQ_ROUTING_AUTO_REROUTE_ENABLED=true
 ```
 
 Auto rerouting only ever moves jobs to the *next* live SLA tier
-(`within_5_seconds` → `within_1_minute` → `within_5_minutes` → `within_1_hour`).
-It never parks or blackholes.
+(`within_5_seconds` → `within_1_minute` → `within_5_minutes` →
+`within_1_hour`). It never parks or blackholes.
 
 Wire it up in your initializer:
 
@@ -173,15 +174,16 @@ routing_auto_reroute:
   class: "Sidekiq::Routing::Auto::RerouteJob"
 ```
 
-`RerouteJob` checks each SLA queue's estimated workload against its capacity and,
-for any tier over `capacity_threshold_percent`, moves the noisiest classes to
-the next tier. `RerouteJob` itself is excluded from rerouting by default.
+`RerouteJob` checks each SLA queue's estimated workload against its capacity
+and, for any tier over `capacity_threshold_percent`, moves the noisiest classes
+to the next tier. `RerouteJob` itself is excluded from rerouting by default.
 
 ## Web tab
 
 A read-only "Routing" tab for Sidekiq Web shows active routes and parking-queue
-depth/breakdown. Every mutating action stays on the console API — the tab never
-exposes park/blackhole/unpark/sweep, so destructive operations stay deliberate.
+depth/breakdown. Every mutating action stays on the console API — the tab
+never exposes park/blackhole/unpark/sweep, so destructive operations stay
+deliberate.
 
 Require it only where you mount Sidekiq Web:
 
