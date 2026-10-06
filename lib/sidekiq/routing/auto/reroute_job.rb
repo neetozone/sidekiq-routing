@@ -64,7 +64,11 @@ module Sidekiq
         end
 
         def calculate_capacity(queue_name, sla_seconds)
-          total_concurrency = Sidekiq::ProcessSet.new.sum { |process| process["concurrency"] }.nonzero? || 10
+          # Sidekiq 8 moved "concurrency" out of the heartbeat's `info` JSON into
+          # its own Redis hash field, which Sidekiq 7's ProcessSet#each does not
+          # read. This gem supports sidekiq >= 7, so a process may report no
+          # concurrency at all (notably mid rolling upgrade); treat it as zero.
+          total_concurrency = Sidekiq::ProcessSet.new.sum { |process| process["concurrency"].to_i }.nonzero? || 10
           weight_fraction = queue_weight_fraction(queue_name)
 
           total_concurrency * weight_fraction * sla_seconds
