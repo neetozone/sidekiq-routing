@@ -64,7 +64,7 @@ module Sidekiq
         end
 
         def calculate_capacity(queue_name, sla_seconds)
-          total_concurrency = Sidekiq::ProcessSet.new.sum { |process| process["concurrency"] }.nonzero? || 10
+          total_concurrency = Sidekiq::ProcessSet.new.total_concurrency.nonzero? || 10
           weight_fraction = queue_weight_fraction(queue_name)
 
           total_concurrency * weight_fraction * sla_seconds
