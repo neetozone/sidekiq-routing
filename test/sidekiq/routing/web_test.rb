@@ -31,7 +31,7 @@ module Sidekiq
       end
 
       def test_web_extension_registers_no_mutating_routes
-        source = File.read(WebExtension.method(:registered).source_location.first)
+        source = File.read(WebExtension.method(:registered).source_location.first, encoding: "UTF-8")
         refute_match(/app\.post/, source, "Routing tab must register no POST routes")
       end
     end
